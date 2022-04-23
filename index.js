@@ -47,7 +47,7 @@ app.get('/reviews', (req, res, next) => {
   db.query(`SELECT JSON_BUILD_OBJECT(
     'results', (SELECT JSON_AGG(ROW_TO_JSON(reviews)) FROM (SELECT review_id, rating, summary, recommend, response, body, date, reviewer_name, helpfulness,
       (SELECT JSON_AGG(ROW_TO_JSON(photos)) photos FROM (SELECT url FROM photos WHERE review_id = reviews.review_id) photos)
-      FROM reviews WHERE product_id = $1 AND report = 'f' LIMIT $2 OFFSET $3) reviews)
+      FROM reviews WHERE product_id = $1 AND reported = 'f' LIMIT $2 OFFSET $3) reviews)
       ) object`, [product_id, count, page], (err, result) => {
         if (err) {
           return next(err);
@@ -64,17 +64,17 @@ app.get('/reviews', (req, res, next) => {
     )
 })
 
-app.put(/reviews/:review_id/helpful, (req,res,next) => {
+app.put('/reviews/:review_id/helpful', (req,res,next) => {
   db.query(`UPDATE reviews SET helpfulness = helpfulness + 1 WHERE review_id = $1`, [req.params.review_id], (err, result) => {
     if (err) {
       return next(err);
     }
     res.end;
-  })
-})
+  });
+});
 
-app.put(/reviews/:review_id/report, (req,res,next) => {
-  db.query(`UPDATE reviews SET helpfulness = 't' WHERE review_id = $1`, [req.params.review_id], (err, result) => {
+app.put('/reviews/:review_id/report', (req,res,next) => {
+  db.query(`UPDATE reviews SET reported = 't' WHERE review_id = $1`, [req.params.review_id], (err, result) => {
     if (err) {
       return next(err);
     }
