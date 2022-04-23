@@ -9,16 +9,45 @@ const PORT = 3000;
 
 app.use(bodyParser.json());
 
+app.get('/reviews/meta', (req, res, next) => {
+  var product_id = req.query.product_id;
+  console.log('ping');
+  db.query(`SELECT JSON_BUILD_OBJECT(
+    'product_id',
+    (SELECT product_id FROM reviews WHERE product_id = $1 LIMIT 1),
+    'ratings',
+    (SELECT JSON_BUILD_OBJECT(
+      '1', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 1),
+      '2', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 2),
+      '3', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 3),
+      '4', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 4),
+      '5', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 5)
+    )),
+    'recommended',
+    (SELECT JSON_BUILD_OBJECT(
+      'false', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND recommend = 'f'),
+      'true', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND recommend = 't')
+    )),
+    'characteristics', (SELECT JSON_AGG(ROW_TO_JSON(average))
+    FROM (SELECT id, name, (SELECT AVG(value) FROM characteristics_review WHERE characteristic_id = characteristics.id) FROM characteristics WHERE product_id = $1 ) average)
+  ) meta`, [product_id], (err, result) => {
+    console.log(result.rows[0].meta);
+    if (err) {
+      return next(err);
+    }
+    res.send(result.rows[0].meta);
+    return result;
+  })
+})
+
+
 app.get('/reviews', (req, res, next) => {
-  console.log(req.query);
   var product_id = req.query.product_id;
   var page = req.query.page || 0;
   var count = req.query.count || 5;
-  console.log(product_id, page, count);
   db.query(`SELECT JSON_BUILD_OBJECT(
-    'product_id', (SELECT product_id FROM reviews WHERE product_id = $1  LIMIT 1),
     'results', (SELECT JSON_AGG(ROW_TO_JSON(reviews)) FROM (SELECT review_id, rating, summary, recommend, response, body, date, reviewer_name, helpfulness,
-      (SELECT JSON_AGG(ROW_TO_JSON(photos)) photos FROM (SELECT url FROM photos WHERE review_id = 5) photos)
+      (SELECT JSON_AGG(ROW_TO_JSON(photos)) photos FROM (SELECT url FROM photos WHERE review_id = reviews.review_id) photos)
       FROM reviews WHERE product_id = $1 LIMIT $2 OFFSET $3) reviews)
       ) object`, [product_id, count, page], (err, result) => {
         if (err) {
@@ -41,13 +70,34 @@ app.listen(PORT, () => {
 });
 
 //Reviews
-/*
 
-**************************************************************
+
+/*
+//Main Get
 SELECT JSON_BUILD_OBJECT(
-  'product_id', (SELECT product_id FROM reviews WHERE product_id = $1  LIMIT 1),
-  'results', (SELECT JSON_AGG(ROW_TO_JSON(reviews)) FROM (SELECT review_id, rating, summary, recommend, response, body, date, reviewer_name, helpfulness,
+  'results', (SELECT JSON_AGG(ROW_TO_JSON(reviews))
+  FROM (SELECT review_id, rating, summary, recommend, response, body, date, reviewer_name, helpfulness,
     (SELECT JSON_AGG(ROW_TO_JSON(photos)) photos FROM (SELECT url FROM photos WHERE review_id = 5) photos)
     FROM reviews WHERE product_id = $1) reviews)
     ) object
+
+//Meta Get
+Rating
+
+SELECT JSON_BUILD_OBJECT(
+  'ratings', (SELECT JSON_BUILD_OBJECT(
+    '1', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 1),
+    '2', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 2),
+    '3', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 3),
+    '4', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 4),
+    '5', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND rating = 5)
+  )),
+  'recommended', (SELECT JSON_BUILD_OBJECT(
+    'false', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND recommend = f),
+    'true', (SELECT COUNT(review_id) FROM reviews WHERE review_id = $1 AND recommend = t),
+  )),
+  'characteristics', (SELECT JSON_AGG(ROW_TO_JSON(meta)) FROM (SELECT id, name FROM characteristics WHERE product_id = $1, (SELECT AVG(value) FROM characteristics_review WHERE characteristic_id = characteristics.id)) meta)
+)
+
+
 */
