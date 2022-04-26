@@ -40,6 +40,13 @@ CREATE TABLE characteristics_review (
   CONSTRAINT fk_review_id FOREIGN KEY (review_id) REFERENCES reviews(review_id)
 );
 
+CREATE INDEX characteristics_id ON characteristics_review ( characteristic_id );
+CREATE INDEX characteristics_product_id ON characteristics ( product_id );
+CREATE INDEX photos_review_id ON photos ( review_id );
+CREATE INDEX review_rating ( review_id, rating );
+CREATE INDEX review_recommend ( review_id, recommend );
+CREATE INDEX review_reported ( review_id, reported );
+CREATE INDEX review_product_id ( product_id );
 /*
 
 */

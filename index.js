@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 
 app.get('/reviews/meta', (req, res, next) => {
   var product_id = req.query.product_id;
-  console.log('ping');
+  console.log('Metadata request received for product #', product_id);
   db.query(`SELECT JSON_BUILD_OBJECT(
     'product_id',
     (SELECT product_id FROM reviews WHERE product_id = $1 LIMIT 1),
@@ -31,10 +31,10 @@ app.get('/reviews/meta', (req, res, next) => {
     'characteristics', (SELECT JSON_AGG(ROW_TO_JSON(average))
     FROM (SELECT id, name, (SELECT AVG(value) FROM characteristics_review WHERE characteristic_id = characteristics.id) FROM characteristics WHERE product_id = $1 ) average)
   ) meta`, [product_id], (err, result) => {
-    console.log(result.rows[0].meta);
     if (err) {
       return next(err);
     }
+    console.log('Meta Data Request Finished');
     res.send(result.rows[0].meta);
     return result;
   })
@@ -42,6 +42,7 @@ app.get('/reviews/meta', (req, res, next) => {
 
 app.get('/reviews', (req, res, next) => {
   var product_id = req.query.product_id;
+  console.log('Review request received for product #', product_id);
   var page = req.query.page || 0;
   var count = req.query.count || 5;
   db.query(`SELECT JSON_BUILD_OBJECT(
@@ -58,6 +59,7 @@ app.get('/reviews', (req, res, next) => {
           count: count,
           results: result.rows[0].object.results
         }
+        console.log('Review Data Request Finished');
         res.send(object);
         return result;
       }
