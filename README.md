@@ -17,8 +17,6 @@ Ensure the database is prepared - [PSQL](**TODO**)
 npm install
 ```
 
-copy `example.env` to `.env` and configure the variables within.
-
 ## Run the App
 
 ```
