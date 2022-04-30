@@ -85,6 +85,7 @@ Retrieve a list of reviews
                 {
                     "url": "https://images.unsplash.com/photo-1542818212-9899bafcb9db?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=1526&q=80"
                 }
+            ]
         }
     ]
 }
